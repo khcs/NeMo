@@ -57,6 +57,8 @@ __all__ = [
     "sample_token_topk",
 ]
 
+from pdb import set_trace as bp
+
 
 def get_default_sampling_params():
     # default do greedy sampling
@@ -683,8 +685,8 @@ def sample_sequence_batch(
         counter = 0
 
         batch_size = context_tokens.size(0)
-        is_done = torch.zeros([batch_size]).byte().cuda()
-        tokens = context_tokens
+        is_done = torch.zeros([batch_size]).byte().to(model.device)
+        tokens = context_tokens.to(model.device)
         output_logits = None
         all_generated_indices = None  # used to track all generated indices
         # Generate enough tokens for the longest sequence
@@ -724,7 +726,7 @@ def sample_sequence_batch(
 
                 # started indicates whether the current token step passes the context_length, so we make sure not to overwrite the context tokens
 
-                started = context_lengths <= context_length
+                started = (context_lengths <= context_length).to(model.device)
                 if extra.get('greedy', False):
                     prev = torch.argmax(logits, dim=-1).view(-1)
                 else:

@@ -90,6 +90,8 @@ try:
 except (ImportError, ModuleNotFoundError):
     HAVE_TE = False
 
+from pdb import set_trace as bp
+
 
 class MegatronGPTExportableModel(torch.nn.Module, Exportable):
     """
@@ -862,10 +864,10 @@ class MegatronGPTModel(MegatronBaseModel, TextGeneration):
                     set_inference_key_value_memory,
                     inference_max_sequence_len,
                 ) = batch
-                tokens = tokens.cuda()
-                position_ids = position_ids.cuda()
+                tokens = tokens.to(self.device)
+                position_ids = position_ids.to(self.device)
                 if attention_mask is not None:
-                    attention_mask = attention_mask.cuda()
+                    attention_mask = attention_mask.to(self.device)
                     attention_mask = attention_mask[0:1]
                 extra_arg['set_inference_key_value_memory'] = set_inference_key_value_memory[0].item()
                 extra_arg['inference_max_sequence_len'] = inference_max_sequence_len[0].item()
@@ -1129,6 +1131,7 @@ class MegatronGPTModel(MegatronBaseModel, TextGeneration):
         inputs: Union[List[str], torch.Tensor, List[dict]],
         length_params: LengthParam,
         sampling_params: SamplingParam = None,
+        device: int = None,
     ) -> OutputType:
 
         # check whether the DDP is initialized
@@ -1154,7 +1157,7 @@ class MegatronGPTModel(MegatronBaseModel, TextGeneration):
         if length_params is None:
             length_params = get_default_length_params()
 
-        return megatron_gpt_generate(self.cuda(), inputs, self.tokenizer, length_params, sampling_params)
+        return megatron_gpt_generate(self.cuda(device=device), inputs, self.tokenizer, length_params, sampling_params)
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: Optional[int] = None) -> Any:
         inference_config = self.get_inference_config()
